@@ -1,12 +1,17 @@
 #Importing libraries
-import nltk
+#import nltk
 import pandas as pd
 import re
 import time
 import concurrent.futures
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from nltk.stem.porter import *
+#from nltk.tokenize import word_tokenize
+#from nltk.corpus import stopwords
+#from nltk.stem.porter import *
+import spacy
+
+#Load the english corpus and get the stop words
+spacy_en = spacy.load('en_core_web_sm')
+en_stopwords = spacy.lang.en.stop_words.STOP_WORDS
 
 #Setting up regular expression patterns to remove html tags and punctuation excluding single quotes and space
 include_punc = "' "
@@ -14,7 +19,7 @@ remove_html = re.compile(r"(<.*?>)")
 remove_punc = re.compile(r"[^\w"+include_punc+"]")
 
 #Instantiating Porter Stemmer
-stemmer = PorterStemmer()
+#stemmer = PorterStemmer()
 
 def remove_special_chars(text):
     #convert to lower case
@@ -26,19 +31,22 @@ def remove_special_chars(text):
     #remove whitespace
     text=text.strip()
     return text
-
+'''
 def remove_stop_words(tokenized_sent):
     return list(filter(lambda word: word not in stopwords.words('english'), tokenized_sent))
-
+'''
 def process_sync(data):
     special_chars_removed = remove_special_chars(data)
-    words_tokenized = special_chars_removed.split()
-    stopwords_removed = remove_stop_words(words_tokenized)
-	stemmed_words = [stemmer.stem(words) for words in stopwords_removed]
-	return stemmed_words
+    spacy_sent = spacy_en(special_chars_removed)
+    stop_words_removed = [word.text for word in spacy_sent if not word.is_stop]
+    stop_words_removed = " ".join(stop_words_removed)
+    sent_lemmatized = [word.lemma_ for word in spacy_en(stop_words_removed)]
+    return sent_lemmatized
 
 def preprocess(user_reviews):
-    processed_reviews = user_reviews.apply(process_sync)
+    processed_reviews = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        processed_reviews = list(executor.map(process_sync, user_reviews))
     print(processed_reviews[0])
 
 if __name__ == '__main__':
@@ -48,5 +56,6 @@ if __name__ == '__main__':
     reviews_df = df[["overall", "reviewText"]]
     user_reviews = df["reviewText"]
     start = time.time()
-	preprocess(user_reviews)
-	print(time.time() - start)
+    preprocess(user_reviews)
+    print(time.time() - start)
+
