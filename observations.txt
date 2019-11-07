@@ -4,4 +4,4 @@
 447.3583345413208 - time in ms for punctuation/special characters removal, word tokenization and stop words removal
 242.85029792785645 - time in sec for remove_punc using regular expressions, stopwords removal using nltk, tokenization using string.split()
 284.25528478622437 - time in sec for remove_punc using regular expressions, stopwords removal using nltk, tokenization using string.split() , stemming with nltk
-
+306.1397752761841 - time in ms for the above operations using spacy
