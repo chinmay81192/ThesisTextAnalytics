@@ -7,9 +7,7 @@ import concurrent.futures
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import *
-import gensim
-import multiprocessing
-from gensim.models import Word2Vec
+from glove import Corpus, Glove
 
 #Setting up regular expression patterns to remove html tags and punctuation excluding single quotes and space
 include_punc = "' "
@@ -47,11 +45,13 @@ def preprocess(user_reviews):
     return processed_reviews
 
 def getWordEmbeddings(processed_text):
-    word_2_vec = Word2Vec(window = 3, size = 500, workers = multiprocessing.cpu_count(), sg = 1, hs = 1, alpha = 0.001)
-    word_2_vec.build_vocab(processed_text, progress_per = 10000)
-    word_2_vec.train(processed_text, total_examples = word_2_vec.corpus_count, epochs = 50, report_delay = 1)
-    word_2_vec.init_sims(replace=True)
-    print(word_2_vec.most_similar('price'))
+    corpus = Corpus()
+    corpus.fit(processed_text, window=3)
+    glove = Glove(no_components = 500, learning_rate = 0.001)
+    glove.fit(corpus.matrix, epochs = 300000, no_threads = 4, verbose=True)
+    glove.add_dictionary(corpus.dictionary)
+    print(glove.most_similar('price'))
+
 
 
 if __name__ == '__main__':
